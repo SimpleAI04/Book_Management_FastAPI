@@ -1,12 +1,6 @@
 print("Hello World Git")
 
-
-a = "Xin chao"
-
-b = "Quan"
-
-print("a", a)
-
-print("b", b)
+a = 123
+b = 456
 
 print(a + b)
