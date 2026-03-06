@@ -21,8 +21,10 @@ class CategoryDBBase(CategoryBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
 
 class Category(CategoryDBBase):
     """schema return for client"""
+
     pass
