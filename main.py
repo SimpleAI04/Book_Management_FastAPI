@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api.endpoints import book, author, category
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="Book Management API",
@@ -7,6 +8,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # include router
 app.include_router(book.router, prefix="/books", tags=["Books"])
