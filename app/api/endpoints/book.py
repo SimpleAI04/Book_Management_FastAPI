@@ -1,10 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List
 from sqlalchemy.orm import Session
 
 from app.api.dependency import get_db
 from app import models
 from app.schemas.book import Book, BookCreate, BookUpdate
+from pathlib import Path
+import uuid
+
+# make dir to save img
+COVER_IMG = Path(r"app/static/covers")
+COVER_IMG.mkdir(parents=True, exist_ok=True)
+
 
 router = APIRouter()
 
@@ -163,3 +170,49 @@ def delete_category(book_id: int, db: Session = Depends(get_db)):
 
     db.delete(book)
     db.commit()
+
+
+@router.post("/{book_id}/cover", response_model=Book)
+async def upload_book_cover(
+    book_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
+):
+    """
+    Upload book cover
+
+    - Allowed file types: jpg, png, jpeg
+    - Save file: app/static/covers
+    - update book cover in database to url
+
+    """
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Book not found"
+        )
+
+    allowed_types = ["jpg", "png", "jpeg"]
+    if file.filename.split(".")[-1].lower() not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type"
+        )
+
+    content = await file.read()
+
+    MAX_SIZE = 2 * 1024 * 1024
+    if len(content) > MAX_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="File too large"
+        )
+
+    file_name = f"book_{book_id}_{uuid.uuid4().hex}.{file.filename.split('.')[-1]}"
+    file_path = f"app/static/covers/{file_name}"
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    book.cover_image = f"/static/covers/{file_name}"
+    db.add(book)
+    db.commit()
+    db.refresh(book)
+
+    return book
