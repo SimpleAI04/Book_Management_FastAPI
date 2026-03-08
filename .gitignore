@@ -2,3 +2,5 @@ fastapi/
 __pycache__/
 
 app.db
+
+app/static
